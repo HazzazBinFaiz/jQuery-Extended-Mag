@@ -87,10 +87,10 @@
 					if (options.loadingText){
 						var loadingElement = $( "<div class='loadingElement' style='pointer-events:none;height:"+smallHeight+"px;width:"+smallWidth+"px;font-family:sans-serif;position:absolute;top:"+offset.top+"px;left:"+offset.left+"px;visibility:hidden;background:rgba(255,255,255,0.5);color:black;font-size:2em;font-weight:bold;text-align:center;'><p style='position: absolute; left: 50%;top: 50%;transform: translate(-50%, -50%);'>"+options.loadingText+"</p></div>" );
 						$('body').append( loadingElement );
-						imageElement.on('mouseenter', function(){
+						imageElement.on('mouseenter touchstart', function(){
 							loadingElement.css("visibility","visible");
 						});
-						imageElement.on('mouseleave', function(){
+						imageElement.on('mouseleave touchend', function(){
 							loadingElement.css("visibility","hidden");
 						});
 						if (imageElement.is(':hover')) {
@@ -100,10 +100,10 @@
 					else if (options.loadingImage) {
 						var loadingElement = $( "<div class='loadingElement' style='pointer-events:none;height:"+smallHeight+"px;width:"+smallWidth+"px;font-family:sans-serif;position:absolute;top:"+offset.top+"px;left:"+offset.left+"px;visibility:hidden;background:rgba(255,255,255,0.5);color:black;font-size:2em;font-weight:bold;text-align:center;'><img style='position: absolute; left: 50%;top: 50%;transform: translate(-50%, -50%);' src='"+options.loadingImage+"'/></div>" );
 						$('body').append( loadingElement );
-						imageElement.on('mouseenter', function(){
+						imageElement.on('mouseenter touchstart', function(){
 							loadingElement.css("visibility","visible");
 						});
-						imageElement.on('mouseleave', function(){
+						imageElement.on('mouseleave touchend', function(){
 							loadingElement.css("visibility","hidden");
 						});
 						if (imageElement.is(':hover')) {
@@ -116,13 +116,16 @@
 						if (options.loadingText || options.loadingImage){
 							//remove our loading stuff
 							imageElement.trigger("mouseleave");
-							imageElement.unbind('mouseenter mouseleave');
+							imageElement.unbind('mouseenter mouseleave touchstart touchend');
 							loadingElement.remove();
 						}
 
-						imageElement.on('mouseenter', function(){ //show/hide functionality
-							//before we show the zoom element, lets make sure everything is still lined up 
+						imageElement.on('mouseenter touchstart', function(event){ //show/hide functionality
+							//before we show the zoom element, lets make sure everything is still lined up
 							//this is here in case things have moved since init, like if the user changed their browser width and things shuffled
+							if (event.type === 'touchstart'){
+							    $('body').css('overflow', 'hidden');
+						        }
 							offset = imageElement.offset();
 							if (options.position === 'right') {
 								zoomElement.css("top",offset.top);
@@ -131,7 +134,7 @@
 							else if (options.position === 'overlay') {
 								zoomElement.css("top",offset.top);
 								zoomElement.css("left",offset.left);
-							}						
+							}
 							if (options.squareOverlay) {
 								overlayElement.css("top",offset.top);
 								overlayElement.css("left",offset.left);
@@ -141,7 +144,10 @@
 								innerOverlayElement.css("visibility","visible");
 							}
 						});
-						imageElement.on('mouseleave', function(){
+						imageElement.on('mouseleave touchend', function(event){
+							if (event.type === 'touchend'){
+							    $('body').css('overflow', '');
+							}
 							zoomElement.css("visibility","hidden");
 							if (options.squareOverlay) {
 								innerOverlayElement.css("visibility","hidden");
@@ -162,21 +168,23 @@
 							innerOverlayElement.css('height', innerOverlayH);
 							innerOverlayElement.css('width', innerOverlayW);
 						}
-						imageElement.on('mousemove', function(event){ //on mousemove, use ratios and heights to move appropriately
+						imageElement.on('mousemove touchmove', function(event){ //on mousemove, use ratios and heights to move appropriately
+						  var pageX = event.pageX ? event.pageX : event.originalEvent.touches[0].pageX;
+              var pageY = event.pageY ? event.pageY : event.originalEvent.touches[0].pageY;
 							offset = imageElement.offset();
-							var setTop = smallHeight/2-(event.pageY-offset.top)*hRatio;
+							var setTop = smallHeight/2-(pageY-offset.top)*hRatio;
 							setTop = Math.max(setTop,hDifference);
 							setTop = Math.min(setTop,0);
-							var setLeft = smallWidth/2-(event.pageX-offset.left)*wRatio;
+							var setLeft = smallWidth/2-(pageX-offset.left)*wRatio;
 							setLeft = Math.max(setLeft,wDifference);
 							setLeft = Math.min(setLeft,0);
 							fullSizeImage.css('top', setTop);
 							fullSizeImage.css('left', setLeft);
 							if (options.squareOverlay) {
-								var squareTop = (event.pageY-offset.top)-innerOverlayElement.height()/2;
+								var squareTop = (pageY-offset.top)-innerOverlayElement.height()/2;
 								squareTop = Math.max(squareTop, 0);
 								squareTop = Math.min(squareTop, smallHeight-innerOverlayElement.height());
-								var squareLeft = (event.pageX-offset.left)-innerOverlayElement.width()/2;
+								var squareLeft = (pageX-offset.left)-innerOverlayElement.width()/2;
 								squareLeft = Math.max(squareLeft, 0);
 								squareLeft = Math.min(squareLeft, smallWidth-innerOverlayElement.width());
 								innerOverlayElement.css('top', squareTop);
@@ -202,13 +210,13 @@
 			}
 			if (options.lazy) {
 				if ($(this).width()>10 && $(this).height()>10) {
-					$(this).one('mouseenter', function(){
+					$(this).one('mouseenter touchstart', function(){
 						extmInit(options, $(this));
 					});
 				}
 				else {
 					$(this).one('load', function(){
-						$(this).one('mouseenter', function(){
+						$(this).one('mouseenter touchstart', function(){
 							extmInit(options, $(this));
 						});
 					});
